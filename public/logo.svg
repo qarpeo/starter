@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Nuxt Emerald to Cloudflare Orange Edge Gradient -->
+    <linearGradient id="qarpeoMonolith" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00DC82" />
+      <stop offset="50%" stop-color="#10B981" />
+      <stop offset="80%" stop-color="#F6821F" />
+      <stop offset="100%" stop-color="#FF9F43" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sharp Architectural Dark Background -->
+  <rect width="512" height="512" fill="#040507" />
+
+  <!-- Monolithic Square Q Body -->
+  <g transform="translate(64, 64) scale(1.92)">
+    <!-- Outer Square Path with 45-degree chamfered bottom right -->
+    <path d="M 32 32 
+             L 168 32 
+             L 168 132 
+             L 132 168 
+             L 32 168 Z" 
+          fill="none" 
+          stroke="url(#qarpeoMonolith)" 
+          stroke-width="28" 
+          stroke-linejoin="miter" />
+
+    <!-- 45° Precision Edge Tail (Contained inside frame) -->
+    <polygon points="120,120 172,120 120,172" fill="#F6821F" />
+    <!-- Secondary Emerald Accent Chip -->
+    <polygon points="134,106 148,92 162,106 148,120" fill="#00DC82" />
+  </g>
+</svg>

@@ -1,0 +1,36 @@
+{
+  "name": "starter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Minimal starter template for Nuxt 5 and Qarpeo",
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "postinstall": "nuxt prepare",
+    "prepare": "vp config",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.12.0",
+    "nuxt": "npm:nuxt-nightly@^5.0.0-2611052317-a04317f",
+    "qarpeo": "0.0.0-alpha.11",
+    "tailwindcss": "^4.3.5",
+    "vue": "^3.6.0-rc.14",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.151",
+    "@nuxt/devtools": "^4.1.0",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "download"
+    }
+  }
+}
