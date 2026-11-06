@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@nuxt/ui": "^4.12.0",
-    "nuxt": "npm:nuxt-nightly@^5.0.0-2611052317-a04317f",
-    "qarpeo": "0.0.0-alpha.13",
+    "nuxt": "npm:nuxt-nightly@^5.0.0-2611061734-a741a0c",
+    "qarpeo": "^0.1.0",
     "tailwindcss": "^4.3.5",
     "vue": "^3.6.0-rc.14",
     "vue-router": "^5.4.0"
