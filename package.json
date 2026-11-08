@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "starter",
   "version": "0.1.0",
   "private": true,
@@ -15,7 +15,7 @@
   "dependencies": {
     "@nuxt/ui": "^4.12.0",
     "nuxt": "npm:nuxt-nightly@^5.0.0-2611071848-2d8337c",
-    "qarpeo": "^0.1.8",
+    "qarpeo": "^0.1.9",
     "tailwindcss": "^4.3.5",
     "vue": "^3.6.0-rc.14",
     "vue-router": "^5.4.0"
