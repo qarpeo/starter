@@ -14,14 +14,14 @@
   },
   "dependencies": {
     "@nuxt/ui": "^4.12.0",
-    "nuxt": "npm:nuxt-nightly@^5.0.0-2611091007-dc6155c",
-    "qarpeo": "^0.1.12",
+    "nuxt": "npm:nuxt-nightly@^5.0.0-2611110934-dd0e705",
+    "qarpeo": "^0.1.17",
     "tailwindcss": "^4.3.5",
     "vue": "^3.6.0-rc.14",
-    "vue-router": "^5.4.0"
+    "vue-router": "^5.5.0"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.152",
+    "@iconify-json/lucide": "^1.2.153",
     "@nuxt/devtools": "^4.1.0",
     "vite": "catalog:",
     "vite-plus": "catalog:"
