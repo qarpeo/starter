@@ -4,8 +4,8 @@ allowBuilds:
   vue-demi: true
   workerd: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@1.5.0
-  vite-plus: 1.5.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.6.0
+  vite-plus: 1.6.0
 minimumReleaseAge: 0
 minimumReleaseAgeExclude:
   - "@voidzero-dev/vite-plus-core@1.0.0"

@@ -11,6 +11,7 @@ export default defineNuxtConfig({
 
   // Enable Cloudflare edge primitives as you need them:
   qarpeo: {
+    workerName: "starter", // 👈 Worker name defined here
     // db: true, // Cloudflare D1 + Bundled Drizzle ORM
     // auth: true, // Passkeys, OAuth, KV Sessions (No Clerk/Auth0)
     // kv: true, // Cloudflare KV distributed cache
@@ -18,12 +19,6 @@ export default defineNuxtConfig({
     // realtime: true, // WebSockets with DO hibernation
     // cms: true, // Hybrid Edge CMS (Git markdown + D1)
     // agents: true, // Workers AI + Stateful Agents
-  },
-
-  experimental: {
-    prefetchPreloadTags: true,
-    typescriptPlugin: true,
-    writeEarlyHints: true,
   },
 
   runtimeConfig: { public: { version: pkg.version } },
