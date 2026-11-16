@@ -15,23 +15,23 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.12.0",
-    "nuxt": "npm:nuxt-nightly@^5.0.0-2611132210-2c5d147",
-    "qarpeo": "^0.1.31",
+    "@nuxt/ui": "^4.12.2",
+    "nuxt": "npm:nuxt-nightly@^5.0.0-2611161229-4959451",
+    "qarpeo": "^0.1.32",
     "tailwindcss": "^4.3.5",
     "vue": "^3.6.0-rc.15",
     "vue-router": "^5.5.1"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.154",
-    "@nuxt/devtools": "^4.1.0",
+    "@iconify-json/lucide": "^1.2.155",
+    "@nuxt/devtools": "^4.2.0",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "12.18.0",
+      "version": "12.21.0",
       "onFail": "download"
     }
   }
