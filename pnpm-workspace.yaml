@@ -4,8 +4,8 @@ allowBuilds:
   vue-demi: true
   workerd: true
 catalog:
-  vite: npm:@voidzero-dev/vite-plus-core@1.6.0
-  vite-plus: 1.6.0
+  vite: npm:@voidzero-dev/vite-plus-core@8.3.8000
+  vite-plus: 1.7.0
 minimumReleaseAge: 0
 minimumReleaseAgeExclude:
   - "@voidzero-dev/vite-plus-core@1.0.0"
@@ -28,14 +28,11 @@ minimumReleaseAgeExclude:
   - "@oxfmt/*"
   - vitest
   - "@vitest/*"
+  - tsrs
+  - "@tsrs/*"
 overrides:
   vite@*: "catalog:"
   typescript@*: "5.9.2"
-peerDependencyRules:
-  allowAny:
-    - vite
-  allowedVersions:
-    vite: "*"
 onlyBuiltDependencies:
   - esbuild
   - workerd

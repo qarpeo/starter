@@ -1188,7 +1188,7 @@ uxt.config.ts.
 uxt.config.ts | Ambient Global / Composable | Cloudflare Resource | Use for |
 | :--- | :--- | :--- | :--- | :--- |
 | **D1 Database** | qarpeo: { db: true } | db (Drizzle), schema | D1 (SQLite) | Relational data, all tables, auto-migrations |
-| **Edge Auth** | qarpeo: { auth: true } | useAuth(), <SignedIn>, <SignedOut> | KV + WebAuthn | Passkeys, GitHub/Google OAuth, TOTP 2FA, KV sessions |
+| **Edge Auth** | qarpeo: { auth: true } | useAuth(), <QSignedIn>, <QSignedOut> | KV + WebAuthn | Passkeys, GitHub/Google OAuth, TOTP 2FA, KV sessions |
 | **Object Storage** | qarpeo: { blob: true } | lob | R2 (S3-compatible) | Avatars, documents, media uploads ( egress) |
 | **KV Cache** | qarpeo: { kv: true } | kv | KV | Cache, rate limiting, feature flags |
 | **Realtime Rooms**| qarpeo: { realtime: true } | useRealtime(), roadcastToRoom() | Durable Objects | WebSockets with hibernation (zero CPU when idle) |
@@ -1248,13 +1248,13 @@ const { user, loggedIn, logout } = useAuth()
 </script>
 
 <template>
-  <SignedIn>
+  <QSignedIn>
     <p>Welcome {{ user.name }}</p>
     <button @click="logout()">Sign out</button>
-  </SignedIn>
-  <SignedOut>
+  </QSignedIn>
+  <QSignedOut>
     <a href="/api/auth/github">Sign in with GitHub</a>
-  </SignedOut>
+  </QSignedOut>
 </template>
 `
 

@@ -7,6 +7,6 @@ useSeoMeta({
 
 <template>
   <UMain>
-    <QarpeoWelcome />
+    <QWelcome />
   </UMain>
 </template>
