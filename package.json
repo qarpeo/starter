@@ -16,15 +16,15 @@
   },
   "dependencies": {
     "@nuxt/ui": "^4.13.1",
-    "nuxt": "npm:nuxt-nightly@^5.0.0-2611241632-f471666",
-    "qarpeo": "^0.3.3",
+    "nuxt": "npm:nuxt-nightly@^5.0.0-2611251439-b19192b",
+    "qarpeo": "^0.4.0",
     "tailwindcss": "^4.3.5",
     "vue": "^3.5.46",
-    "vue-router": "^5.5.1"
+    "vue-router": "^5.5.3"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.159",
-    "@nuxt/devtools": "^4.2.1",
+    "@iconify-json/lucide": "^1.2.160",
+    "@nuxt/devtools": "^4.2.2",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },

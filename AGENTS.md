@@ -252,16 +252,17 @@ Always use `UCard`.
 
 ---
 
-## 8. Authentication — `nuxt-auth-utils`
+## 8. Authentication & RBAC — Qarpeo Edge Auth
 
-This project uses `nuxt-auth-utils` for session management. Always use its built-in
-composables and server utilities. Never implement custom session logic.
+This project uses **Qarpeo Edge Auth** (Better Auth + D1 + KV) for authentication, sessions, and runtime RBAC. Always use its built-in composables and server utilities. Never implement custom session or JWT logic.
 
 ### Client-side (Vue components / composables)
 
 ```typescript
 // ✅ Correct — composables are auto-imported
-const { loggedIn, user, session, clear } = useUserSession()
+const { loggedIn, user, session, logout } = useAuth() // or useUserSession()
+const { can, roles, isSuper } = usePermissions()
+const canPublish = useCan("cms:publish")
 
 // Check auth state
 if (!loggedIn.value) navigateTo("/login")
@@ -270,42 +271,27 @@ if (!loggedIn.value) navigateTo("/login")
 console.log(user.value?.id)
 
 // Log out
-await clear()
+await logout()
 ```
 
-### Server-side (API route handlers)
+### Server-side (API route handlers — `nuxt/server`)
 
-> **Nuxt 4.6+ note:** A new `nuxt/server` import surface exists for portable server code.
-> The current project uses auto-imported h3 helpers (still fully supported).
->
-> **⛔ Migration currently blocked** — `nuxt-auth-utils` (`setUserSession`, `requireUserSession`,
-> `getUserSession`) still expects `H3Event` internally. Passing `RequestEvent` from `nuxt/server`
-> causes a type mismatch. Wait until `nuxt-auth-utils` ships `RequestEvent` support before migrating.
->
-> **Do NOT attempt this migration yet.** Keep using auto-imported h3 helpers everywhere.
->
-> For reference when migration becomes unblocked, `nuxt/server` exports:
-> `defineEventHandler`, `createError`, `getQuery`, `getValidatedQuery`, `getRequestHeader`,
-> `getRequestHost`, `getRequestIP`, `getRequestURL`, `getRouterParam`, `getRouterParams`,
-> `readBody`, `readValidatedBody`, `getCookie`, `setCookie`, `sendRedirect`, `setResponseStatus`,
-> `handleCors`, `useRuntimeConfig` — plus `type RequestEvent` (replaces `H3Event`).
-> Note: `getHeader` → `getRequestHeader`, `setResponseHeader` → `event.res.headers.set(...)`
+Nuxt 5 uses `nuxt/server` (`defineEventHandler`, `createError`, `getQuery`, `readBody`, `getRouterParam`, `type RequestEvent`) alongside Qarpeo's auto-imported auth & RBAC helpers (`requireAuth`, `getAuthContext`, `requireUserSession`, `requirePermission`, `requireConsoleAccess`, `requireConsolePermission`).
 
 ```typescript
-// ✅ Correct — server utils are auto-imported in H3 handlers
+import { defineEventHandler } from "nuxt/server"
+
+// ✅ Correct — auto-imported Qarpeo auth & RBAC helpers
 export default defineEventHandler(async (event) => {
-  // Require auth — throws 401 if not logged in
-  const { user } = await requireUserSession(event)
+  // Require auth (supports session cookies & PATs) — throws 401 if not logged in
+  const { user } = await requireAuth(event)
+
+  // Require specific RBAC permission (throws 401/403)
+  await requirePermission(event, "cms:publish")
 
   // Or get session without throwing
   const session = await getUserSession(event)
-  if (!session.user) return null
-
-  // Set session (on login)
-  await setUserSession(event, { user: { id: "...", email: "..." } })
-
-  // Clear session (on logout)
-  await clearUserSession(event)
+  if (!session?.user) return null
 })
 ```
 
@@ -354,10 +340,10 @@ These are **auto-imported** — never import them manually in server files:
 | `readValidatedBody`                                                                             | H3 validated body reader                                         |
 | `getValidatedRouterParams`                                                                      | H3 validated route params reader                                 |
 | `createError`                                                                                   | H3 error factory                                                 |
-| `requireUserSession`                                                                            | nuxt-auth-utils session guard                                    |
-| `getUserSession`                                                                                | nuxt-auth-utils session getter                                   |
-| `setUserSession`                                                                                | nuxt-auth-utils session setter                                   |
-| `clearUserSession`                                                                              | nuxt-auth-utils session clear                                    |
+| `requireUserSession`                                                                            | Qarpeo edge auth session guard                                   |
+| `getUserSession`                                                                                | Qarpeo edge auth session getter                                  |
+| `setUserSession`                                                                                | Qarpeo edge auth session setter                                  |
+| `clearUserSession`                                                                              | Qarpeo edge auth session clear                                   |
 | `eq`, `and`, `or`, `sql`, `desc`, `asc`, `count`, `inArray`, `isNull`, `gte`, `lte`, …          | Re-exported from `server/utils/drizzle.ts`                       |
 | `zUuidLike`, `zHandleParam`, `zTextShort`, `zTextLong`, `zCurrencyMinor`, `paginationSchema`, … | From `server/utils/validation.ts` + `shared/utils/pagination.ts` |
 | `hasModule`, `hasAllModules`, `hasAnyModule`, `enableModule`, `disableModule`                   | From `shared/utils/modules.ts`                                   |
@@ -405,7 +391,7 @@ const modules = getInstallableModules()
 const { data } = await useFetch("/api/v1/orgs/test/store/orders")
 ```
 
-### Schema files (`server/db/schema/*.ts`)
+### Schema files (`db/d1/schema/*.ts`)
 
 Schema files run at **build time** — NO auto-imports available. Explicit imports only.
 
@@ -432,7 +418,7 @@ import { storeOrders, storeProducts } from "#qarpeo/schema"
 export type StoreOrder = typeof storeOrders.$inferSelect
 
 // ❌ Wrong — relative path from shared into server breaks client build
-import { storeOrders } from "../../server/db/schema/stores"
+import { storeOrders } from "../../db/d1/schema/stores"
 ```
 
 If you need to import from another shared file (e.g. types referencing other types):
@@ -455,7 +441,7 @@ import type { OrgModuleKey } from "./modules"
 
 // ✅ Use #shared/* explicitly in these cases:
 // - Test files (tests/*.test.ts) — outside auto-import context
-// - Schema files (server/db/schema/*.ts) — build time only
+// - Schema files (db/d1/schema/*.ts) — build time only
 // - Scripts (*.mjs, standalone tools)
 // - One shared/ file importing from another shared/ file (use relative instead)
 
@@ -624,7 +610,7 @@ directory. They are the only place that bridges server API data with Vue compone
 ### What composables must NEVER do
 
 - Import from `drizzle-orm` — no DB access on the client
-- Import from `server/db/schema/` directly — use `#qarpeo/schema` types via `shared/types/`
+- Import from `db/d1/schema/` directly — use `#qarpeo/schema` types via `shared/types/`
 - Contain business logic that belongs in `server/utils/`
 - Make assumptions about the route — accept `handle` as a parameter
 
@@ -1177,30 +1163,29 @@ async function onConfirmDelete() {
 
 <!--QARPEO START-->
 
-# Qarpeo — Cloudflare-Native Full-Stack Edge Platform
+# Qarpeo — Cloudflare-Native Full-Stack Edge Platform (v0.4.0)
 
-This project uses qarpeo for Cloudflare edge integration. All Cloudflare primitives are available as zero-config, ambient TypeScript globals when enabled in
-uxt.config.ts.
+This project uses `qarpeo` for Cloudflare edge integration on Nuxt 5. All Cloudflare primitives are available as zero-config, ambient TypeScript globals when enabled in `nuxt.config.ts`.
 
 ## Primitives & Ambient Globals
 
-| Primitive | Option in
-uxt.config.ts | Ambient Global / Composable | Cloudflare Resource | Use for |
-| :--- | :--- | :--- | :--- | :--- |
-| **D1 Database** | qarpeo: { db: true } | db (Drizzle), schema | D1 (SQLite) | Relational data, all tables, auto-migrations |
-| **Edge Auth** | qarpeo: { auth: true } | useAuth(), <QSignedIn>, <QSignedOut> | KV + WebAuthn | Passkeys, GitHub/Google OAuth, TOTP 2FA, KV sessions |
-| **Object Storage** | qarpeo: { blob: true } | lob | R2 (S3-compatible) | Avatars, documents, media uploads ( egress) |
-| **KV Cache** | qarpeo: { kv: true } | kv | KV | Cache, rate limiting, feature flags |
-| **Realtime Rooms**| qarpeo: { realtime: true } | useRealtime(), roadcastToRoom() | Durable Objects | WebSockets with hibernation (zero CPU when idle) |
-| **Hybrid CMS** | qarpeo: { cms: true } | useCMS() | Git + D1 | Markdown in Git + live editorial publishing |
-| **AI Agents** | qarpeo: { agents: true } | defineAgent(), useAgentChat() | Workers AI + DO | Stateful agents with memory and tool calling |
+| Primitive            | Option in `nuxt.config.ts`   | Ambient Global / Composable                                                | Cloudflare Resource     | Use for                                          |
+| :------------------- | :--------------------------- | :------------------------------------------------------------------------- | :---------------------- | :----------------------------------------------- |
+| **D1 Database**      | `qarpeo: { db: true }`       | `db` (Drizzle), `schema`                                                   | D1 (SQLite)             | Relational data, all tables, auto-migrations     |
+| **Edge Auth & RBAC** | `qarpeo: { auth: true }`     | `useAuth()`, `usePermissions()`, `useCan()`, `<QSignedIn>`, `<QSignedOut>` | D1 + KV + WebAuthn      | Passkeys, OAuth, TOTP 2FA, runtime RBAC          |
+| **Console**          | `qarpeo: { console: true }`  | `useConsole()`, `useConsoleNav()`, `defineConsolePage()`                   | Route middleware + RBAC | Website-injected `/console/*` staff workspace    |
+| **Object Storage**   | `qarpeo: { blob: true }`     | `blob`, `<QImg>`                                                           | R2 (S3-compatible)      | Avatars, documents, media uploads ($0 egress)    |
+| **KV Cache**         | `qarpeo: { kv: true }`       | `kv`                                                                       | KV                      | Cache, rate limiting, feature flags              |
+| **Realtime Rooms**   | `qarpeo: { realtime: true }` | `useRealtime()`, `broadcastToRoom()`                                       | Durable Objects         | WebSockets with hibernation (zero CPU when idle) |
+| **Hybrid CMS**       | `qarpeo: { cms: true }`      | `useCMS()`                                                                 | Git + D1                | Markdown in Git + live editorial publishing      |
+| **AI Agents**        | `qarpeo: { agents: true }`   | `defineAgent()`, `useAgentChat()`                                          | Workers AI + DO         | Stateful agents with memory and tool calling     |
 
 ## Database — Bundled Drizzle ORM on D1
 
-db and schema are ambient globals auto-imported across your entire project. Schema lives in server/db/schema/*.ts.
-Drizzle ORM is bundled natively — no extra @nuxthub/core or separate Drizzle package required.
+`db` and `schema` are ambient globals auto-imported across your server code. Schemas live in `db/d1/schema/*.ts`.
+Drizzle ORM is bundled natively — no extra `@nuxthub/core` or separate Drizzle package required.
 
-` ypescript
+```typescript
 // ✅ Auto-imported ambient globals — no manual imports needed
 const rows = await db.select().from(schema.storeOrders).where(eq(schema.storeOrders.orgId, id))
 
@@ -1209,14 +1194,14 @@ const [order] = await db.insert(schema.storeOrders).values({ orgId, total }).ret
 
 // ✅ Update
 await db
-.update(schema.orgs)
-.set({ modules: ["store"] })
-.where(eq(schema.orgs.id, orgId))
-`
+  .update(schema.orgs)
+  .set({ modules: ["store"] })
+  .where(eq(schema.orgs.id, orgId))
+```
 
-## Blob — Zero-Egress R2 Storage
+## Blob — Zero-Egress R2 Storage & `<QImg>`
 
-` ypescript
+```typescript
 // ✅ Upload a file
 await blob.put("avatars/user-123.jpg", file, { contentType: "image/jpeg" })
 
@@ -1225,11 +1210,13 @@ const url = await blob.getURL("avatars/user-123.jpg")
 
 // ✅ Delete
 await blob.delete("avatars/user-123.jpg")
-`
+```
+
+Use `<QImg src="avatars/user-123.jpg" :width="256" />` in Vue templates for Cloudflare Image Resizing (replaces legacy `<BlobImage>`).
 
 ## KV — Key-Value Store
 
-` ypescript
+```typescript
 // ✅ Set with TTL (seconds)
 await kv.set("ratelimit:ip:1.2.3.4", 5, { ttl: 60 })
 
@@ -1238,41 +1225,39 @@ const count = await kv.get<number>("ratelimit:ip:1.2.3.4")
 
 // ✅ Delete
 await kv.delete("ratelimit:ip:1.2.3.4")
-`
+```
 
 ## Edge Authentication — No Third-Party Fees
 
-`ue
+```vue
 <script setup lang="ts">
 const { user, loggedIn, logout } = useAuth()
 </script>
 
 <template>
   <QSignedIn>
-    <p>Welcome {{ user.name }}</p>
-    <button @click="logout()">Sign out</button>
+    <p>Welcome {{ user?.name }}</p>
+    <UButton @click="() => logout()">Sign out</UButton>
   </QSignedIn>
   <QSignedOut>
-    <a href="/api/auth/github">Sign in with GitHub</a>
+    <UButton to="/api/auth/github">Sign in with GitHub</UButton>
   </QSignedOut>
 </template>
-`
+```
 
 ## Realtime WebSockets — Hibernation Built-in
 
-`	ypescript
+```typescript
 // server/api/notify.post.ts
 export default defineEventHandler(async () => {
   await broadcastToRoom("dashboard", "order:created", { id: "ord_123" })
   return { ok: true }
 })
-`
+```
 
 ## Local Dev
 
-In local dev, Qarpeo automatically starts **Miniflare 4** with local SQLite and KV in .wrangler/state/v3/. No Cloudflare credentials or account needed locally. The environment accurately reproduces production edge bindings.
-
----
+In local dev, Qarpeo automatically starts **Miniflare 4** with local SQLite and KV in `.wrangler/state/v3/`. No Cloudflare credentials or account needed locally. The environment accurately reproduces production edge bindings.
 
 <!--QARPEO END-->
 
@@ -1286,7 +1271,7 @@ from the Drizzle schema.
 ### The Chain
 
 ```
-server/db/schema/*.ts          ← Drizzle schema (source of truth)
+db/d1/schema/*.ts          ← Drizzle schema (source of truth)
         ↓
 shared/types/*.ts              ← Inferred types via $inferSelect / $inferInsert
         ↓  (auto-imported — no explicit import needed)
@@ -1376,7 +1361,7 @@ Use the project's shared Zod helpers (auto-imported in server context):
 
 ### File Organisation
 
-One file per vertical domain in `server/db/schema/`:
+One file per vertical domain in `db/d1/schema/` (multi-database projects also support `db/d1-<name>/`, `db/pg-<name>/`, `db/ms-<name>/`):
 
 ```
 academies.ts    bookings.ts    canteen.ts    clinics.ts
@@ -1388,10 +1373,10 @@ Never add tables for a new vertical to an existing unrelated schema file.
 
 ### Every Table Uses `baseEntity()`
 
-All schema building blocks live in `server/db/schema/_shared.ts`. Never re-implement them.
+All schema building blocks live in `db/d1/schema/_shared.ts`. Never re-implement them.
 
 ```typescript
-// server/db/schema/_shared.ts — the four exports you use every day
+// db/d1/schema/_shared.ts — the four exports you use every day
 
 idField() // UUIDv7 text primary key
 timestamps // createdAt + updatedAt (Unix ms integers, Drizzle-managed)
@@ -1540,7 +1525,7 @@ price: numeric().notNull(), // NEVER
 
 ```typescript
 // ✅ Correct — Unix milliseconds as integer, via Date.now()
-// Always use ...timestamps or ...baseEntity() from server/db/schema/_shared.ts
+// Always use ...timestamps or ...baseEntity() from db/d1/schema/_shared.ts
 // Never hand-write these columns in a new table.
 createdAt: integer().notNull().$defaultFn(() => Date.now()),  // 1727856000000
 updatedAt: integer().notNull().$defaultFn(() => Date.now()).$onUpdate(() => Date.now()),
@@ -1692,8 +1677,11 @@ for project tasks.
 | Format + lint + type-check  | `vp check`               | Run before every commit                        |
 | Auto-fix format/lint issues | `vp check --fix`         | Fix all auto-fixable issues                    |
 | Run tests                   | `vp test`                | Runs Vitest                                    |
-| Build for production        | `vp build`               | Rolldown/Vite production build                 |
-| Generate DB migration       | `vp run db:generate`     | After every schema change                      |
+| Build for production        | `vp run build`           | Nuxt/Nitro production build                    |
+| Deploy to Cloudflare        | `vp run deploy`          | Builds & deploys via `qp deploy`               |
+| Generate DB migration       | `vpx qp db generate`     | After every schema change                      |
+| Run DB migrations           | `vpx qp db migrate`      | Apply pending D1 migrations                    |
+| Run project diagnostics     | `vpx qp doctor`          | Check bindings, schemas, and config            |
 | Pin package manager version | `vp env pin pnpm@latest` | Pins pnpm version in the project               |
 | Show toolchain versions     | `vp toolchain`           | Inspect Vite+, Vitest, Oxlint versions         |
 | Diagnose environment issues | `vp env doctor`          | Run when setup looks wrong                     |
